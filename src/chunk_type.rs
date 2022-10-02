@@ -9,6 +9,30 @@ impl ChunkType {
     pub fn bytes(&self) -> [u8; 4] {
         self.code
     }
+
+    fn is_property_bit_on(&self, byte: u8) -> bool {
+        byte & (1 << 5) != 0
+    }
+
+    pub fn is_critical(&self) -> bool {
+        !self.is_property_bit_on(self.code[0])
+    }
+
+    pub fn is_public(&self) -> bool {
+        !self.is_property_bit_on(self.code[1])
+    }
+
+    pub fn is_reserved_bit_valid(&self) -> bool {
+        !self.is_property_bit_on(self.code[2])
+    }
+
+    pub fn is_safe_to_copy(&self) -> bool {
+        self.is_property_bit_on(self.code[3])
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.is_reserved_bit_valid()
+    }
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
