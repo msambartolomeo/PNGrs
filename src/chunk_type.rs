@@ -1,4 +1,41 @@
-struct ChunkType {}
+use std::str::FromStr;
+
+pub struct ChunkType {
+    code: [u8; 4],
+}
+
+impl ChunkType {
+    pub fn bytes(&self) -> [u8; 4] {
+        self.code
+    }
+}
+
+impl TryFrom<[u8; 4]> for ChunkType {
+    type Error = String;
+
+    fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
+        for c in value {
+            if let 0..=64 | 91..=96 | 123..=255 = c {
+                return Err(String::from("Invalid chunk code bytes"));
+            }
+        }
+
+        Ok(ChunkType { code: value })
+    }
+}
+
+impl FromStr for ChunkType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let code: [u8; 4] = match s.as_bytes().try_into() {
+            Ok(code) => code,
+            Err(_) => return Err(String::from("Invalid chunk code length")),
+        };
+
+        Self::try_from(code)
+    }
+}
 
 #[cfg(test)]
 mod tests {
