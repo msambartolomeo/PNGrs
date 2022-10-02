@@ -10,24 +10,28 @@ impl ChunkType {
         self.code
     }
 
-    fn is_property_bit_on(&self, byte: u8) -> bool {
-        byte & (1 << 5) != 0
+    fn is_property_bit_on(&self, byte: usize) -> bool {
+        assert!(
+            byte != 0 && byte <= 4,
+            "Index out of bounds, should not happen as it is a private method"
+        );
+        self.code[byte - 1] & (1 << 5) != 0
     }
 
     pub fn is_critical(&self) -> bool {
-        !self.is_property_bit_on(self.code[0])
+        !self.is_property_bit_on(1)
     }
 
     pub fn is_public(&self) -> bool {
-        !self.is_property_bit_on(self.code[1])
+        !self.is_property_bit_on(2)
     }
 
     pub fn is_reserved_bit_valid(&self) -> bool {
-        !self.is_property_bit_on(self.code[2])
+        !self.is_property_bit_on(3)
     }
 
     pub fn is_safe_to_copy(&self) -> bool {
-        self.is_property_bit_on(self.code[3])
+        self.is_property_bit_on(4)
     }
 
     pub fn is_valid(&self) -> bool {
