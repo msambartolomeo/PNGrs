@@ -1,8 +1,33 @@
 use std::{fmt::Display, str::FromStr};
 
+use crate::{Error, Result};
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ChunkType {
     code: [u8; 4],
+}
+
+#[derive(Debug)]
+pub enum ChunkTypeError {
+    InvalidLength(usize),
+    InvalidByte(u8),
+}
+
+impl std::error::Error for ChunkTypeError {}
+
+impl Display for ChunkTypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            ChunkTypeError::InvalidLength(length) => {
+                format!("Invalid chunk code length {}, must be 4", length)
+            }
+            ChunkTypeError::InvalidByte(c) => {
+                format!("Invalid character {} on chunk code", *c as char)
+            }
+        };
+
+        write!(f, "{}", msg)
+    }
 }
 
 impl ChunkType {
@@ -40,12 +65,12 @@ impl ChunkType {
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = String;
+    type Error = Error;
 
-    fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
+    fn try_from(value: [u8; 4]) -> Result<Self> {
         for c in value {
             if let 0..=64 | 91..=96 | 123..=255 = c {
-                return Err(String::from("Invalid chunk code bytes"));
+                return Err(Box::new(ChunkTypeError::InvalidByte(c)));
             }
         }
 
@@ -54,12 +79,12 @@ impl TryFrom<[u8; 4]> for ChunkType {
 }
 
 impl FromStr for ChunkType {
-    type Err = String;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let code: [u8; 4] = match s.as_bytes().try_into() {
             Ok(code) => code,
-            Err(_) => return Err(String::from("Invalid chunk code length")),
+            Err(_) => return Err(Box::new(ChunkTypeError::InvalidLength(s.len()))),
         };
 
         Self::try_from(code)
