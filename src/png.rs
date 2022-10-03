@@ -1,8 +1,50 @@
+use std::io::{BufReader, Read};
+
+use crate::chunk::Chunk;
+use crate::chunk_type::ChunkType;
+use crate::{Error, Result};
+
+struct Png {
+    chunks: Vec<Chunk>,
+}
+
+impl Png {
+    pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+}
+
+impl TryFrom<&[u8]> for Png {
+    type Error = Error;
+
+    fn try_from(value: &[u8]) -> Result<Self> {
+        if value.len() < Png::STANDARD_HEADER.len() {
+            todo!("Return error no header provided");
+        }
+
+        let (header, mut chunks) = value.split_at(Png::STANDARD_HEADER.len());
+        let header: [u8; 8] = header.try_into()?;
+
+        if header != Self::STANDARD_HEADER {
+            todo!("Return ivalid header error");
+        }
+
+        let mut png = Png { chunks: Vec::new() };
+
+        while !chunks.is_empty() {
+            let chunk = Chunk::try_from(chunks)?;
+
+            // TODO: Replace magic number
+            (_, chunks) = chunks.split_at(chunk.length() as usize + 12);
+
+            png.chunks.push(chunk);
+        }
+
+        Ok(png)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chunk::Chunk;
-    use crate::chunk_type::ChunkType;
     use std::convert::TryFrom;
     use std::str::FromStr;
 

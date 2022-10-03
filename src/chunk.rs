@@ -4,7 +4,7 @@ use crate::chunk_type::ChunkType;
 use crate::{Error, Result};
 use crc::{Crc, CRC_32_ISO_HDLC};
 
-struct Chunk {
+pub struct Chunk {
     length: u32,
     chunk_type: ChunkType,
     data: Vec<u8>,
