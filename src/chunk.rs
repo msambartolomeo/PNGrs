@@ -70,7 +70,7 @@ impl Chunk {
         }
     }
 
-    fn calculate_crc(chunk_type: &ChunkType, data: &Vec<u8>) -> u32 {
+    fn calculate_crc(chunk_type: &ChunkType, data: &[u8]) -> u32 {
         let crc = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
         let crc_data: Vec<u8> = chunk_type

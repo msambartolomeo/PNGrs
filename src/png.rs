@@ -49,16 +49,13 @@ impl Png {
     pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         let chunk_type = ChunkType::from_str(chunk_type).ok()?;
 
-        for chunk in self.chunks.iter() {
-            if chunk_type == *chunk.chunk_type() {
-                return Some(&chunk);
-            }
-        }
-        None
+        self.chunks
+            .iter()
+            .find(|&chunk| *chunk.chunk_type() == chunk_type)
     }
 
     pub fn as_bytes(&self) -> Vec<u8> {
-        let mut vec: Vec<u8> = Png::STANDARD_HEADER.iter().copied().collect();
+        let mut vec: Vec<u8> = Png::STANDARD_HEADER.to_vec();
 
         for chunk in self.chunks.iter() {
             // NOTE: extends is like append but moves the vector instead of moving the elements
@@ -102,7 +99,7 @@ impl TryFrom<&[u8]> for Png {
 impl Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         // TODO: implement if needed
-        write!(f, "{}", "png")
+        write!(f, "png")
     }
 }
 
