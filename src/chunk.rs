@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::chunk_type::ChunkType;
 use crate::{Error, Result};
 use crc::{Crc, CRC_32_ISO_HDLC};
@@ -29,6 +31,40 @@ impl Chunk {
             crc,
         }
     }
+
+    pub fn length(&self) -> u32 {
+        self.length
+    }
+
+    pub fn chunk_type(&self) -> &ChunkType {
+        &self.chunk_type
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+
+    pub fn crc(&self) -> u32 {
+        self.crc
+    }
+
+    pub fn as_bytes(&self) -> Vec<u8> {
+        self.length
+            .to_be_bytes()
+            .iter()
+            .chain(self.chunk_type.bytes().iter())
+            .chain(self.data.iter())
+            .chain(self.crc.to_be_bytes().iter())
+            .copied()
+            .collect()
+    }
+
+    pub fn data_as_string(&self) -> Result<String> {
+        match std::str::from_utf8(&self.data) {
+            Ok(s) => Ok(String::from(s)),
+            Err(e) => Err(Box::new(e)),
+        }
+    }
 }
 
 impl TryFrom<&[u8]> for Chunk {
@@ -46,6 +82,12 @@ impl TryFrom<&[u8]> for Chunk {
         let chunk_type = ChunkType::try_from(chunk_code)?;
 
         Ok(Self::new(chunk_type, data.to_vec()))
+    }
+}
+
+impl Display for Chunk {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#?}", self.data_as_string())
     }
 }
 
