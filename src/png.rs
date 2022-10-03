@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::str::FromStr;
 
 use crate::chunk::Chunk;
@@ -13,6 +14,12 @@ impl Png {
 
     pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
         Png { chunks }
+    }
+
+    pub fn from_file(path: &str) -> Result<Self> {
+        let bytes: &[u8] = &std::fs::read(path)?;
+
+        Self::try_from(bytes)
     }
 
     pub fn append_chunk(&mut self, chunk: Chunk) {
@@ -92,11 +99,16 @@ impl TryFrom<&[u8]> for Png {
     }
 }
 
+impl Display for Png {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!("Implement if needed")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::convert::TryFrom;
-    use std::str::FromStr;
 
     fn testing_chunks() -> Vec<Chunk> {
         let mut chunks = Vec::new();
@@ -114,8 +126,6 @@ mod tests {
     }
 
     fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
-        use std::str::FromStr;
-
         let chunk_type = ChunkType::from_str(chunk_type)?;
         let data: Vec<u8> = data.bytes().collect();
 
