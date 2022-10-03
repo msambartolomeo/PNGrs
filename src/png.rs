@@ -35,7 +35,7 @@ impl Png {
             }
         }
 
-        todo!("Return error")
+        Err(Box::new(PngError::NoChunkTypeFound(chunk_type.to_string())))
     }
 
     pub fn header(&self) -> &[u8; 8] {
@@ -86,7 +86,6 @@ impl TryFrom<&[u8]> for Png {
         while !chunks.is_empty() {
             let chunk = Chunk::try_from(chunks)?;
 
-            // TODO: Replace magic number
             (_, chunks) = chunks.split_at(chunk.length() as usize + Chunk::METEDATA_LENGTH);
 
             png.chunks.push(chunk);
@@ -98,8 +97,11 @@ impl TryFrom<&[u8]> for Png {
 
 impl Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // TODO: implement if needed
-        write!(f, "png")
+        for chunk in self.chunks.iter() {
+            write!(f, "{}", chunk.chunk_type())?;
+        }
+
+        Ok(())
     }
 }
 
@@ -107,6 +109,7 @@ impl Display for Png {
 enum PngError {
     NoHeaderProvided,
     InvalidHeader([u8; 8]),
+    NoChunkTypeFound(String),
 }
 
 impl std::error::Error for PngError {}
@@ -121,11 +124,13 @@ impl Display for PngError {
                 "The file provided was not a png file, it has invalid header {:?}",
                 header
             ),
+            PngError::NoChunkTypeFound(s) => format!("No Message with code {} found", s),
         };
 
         write!(f, "{}", msg)
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
