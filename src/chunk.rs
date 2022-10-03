@@ -1,3 +1,54 @@
+use crate::chunk_type::ChunkType;
+use crate::{Error, Result};
+use crc::{Crc, CRC_32_ISO_HDLC};
+
+struct Chunk {
+    length: u32,
+    chunk_type: ChunkType,
+    data: Vec<u8>,
+    crc: u32,
+}
+
+impl Chunk {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+        let crc = Crc::<u32>::new(&CRC_32_ISO_HDLC);
+
+        let crc_data: Vec<u8> = chunk_type
+            .bytes()
+            .iter()
+            .chain(data.iter())
+            .copied()
+            .collect();
+
+        let crc = crc.checksum(&crc_data);
+
+        Chunk {
+            length: data.len() as u32,
+            chunk_type,
+            data,
+            crc,
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for Chunk {
+    type Error = Error;
+
+    fn try_from(value: &[u8]) -> Result<Self> {
+        if value.len() < 4 {
+            todo!("return corresponding error")
+        }
+        let (chunk_code, data) = value.split_at(4);
+        let chunk_code: [u8; 4] = chunk_code
+            .try_into()
+            .expect("Lenght already validated, should not panic");
+
+        let chunk_type = ChunkType::try_from(chunk_code)?;
+
+        Ok(Self::new(chunk_type, data.to_vec()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
