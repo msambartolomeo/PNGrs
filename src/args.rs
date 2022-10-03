@@ -4,14 +4,15 @@ use clap::{Parser, Subcommand};
 #[command(name = "PNGrs")]
 #[command(author = "Mauro Sambartolomeo")]
 #[command(version = "1.0")]
-#[command(about = "Encodes a message inside a png image")]
-struct Args {
+#[command(about = "Encode and decode messages into a PNG files")]
+pub struct Args {
     #[command(subcommand)]
-    command: Commands,
+    pub command: Commands,
 }
 
 #[derive(Subcommand)]
-enum Commands {
+pub enum Commands {
+    #[command(about = "Encode a message into a PNG file")]
     Encode {
         path: String,
         code: String,
@@ -19,17 +20,12 @@ enum Commands {
         output: Option<String>,
     },
 
-    Decode {
-        path: String,
-        code: String,
-    },
+    #[command(about = "Decode a message stored in a PNG file")]
+    Decode { path: String, code: String },
 
-    Remove {
-        path: String,
-        code: String,
-    },
+    #[command(about = "Remove a message from a PNG file")]
+    Remove { path: String, code: String },
 
-    Print {
-        path: String,
-    },
+    #[command(about = "Print a list of PNG chunks that can be searched for messages")]
+    Print { path: String },
 }
