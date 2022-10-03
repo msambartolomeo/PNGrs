@@ -114,6 +114,13 @@ impl TryFrom<&[u8]> for Chunk {
     type Error = Error;
 
     fn try_from(value: &[u8]) -> Result<Self> {
+        // NOTE: instead of split_at BufReader.read_exact can be used
+        // Example:
+        // let mut reader = BufReader::new(bytes);
+        // let mut buffer: [u8; 4] = [0, 0, 0, 0];
+        // reader.read_exact(&mut buffer)?;
+        // let data_length = u32::from_be_bytes(buffer);
+
         if value.len() < 4 {
             return Err(Box::new(ChunkError::NoDataLengthProvided));
         }
