@@ -11,8 +11,58 @@ struct Chunk {
     crc: u32,
 }
 
+#[derive(Debug)]
+pub enum ChunkError {
+    InvalidCrc(u32, u32),
+    NoDataLengthProvided,
+    NoChunkTypeProvided,
+    NonMatchingDataLength(usize, usize),
+}
+
+impl std::error::Error for ChunkError {}
+
+impl Display for ChunkError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            ChunkError::InvalidCrc(provided, actual) => format!(
+                "Invalid provided crc {}, actual crc is {}",
+                provided, actual
+            ),
+            ChunkError::NoDataLengthProvided => {
+                "No data length was provided when creating chunk".to_string()
+            }
+            ChunkError::NoChunkTypeProvided => {
+                "No chunk type was provided when creating chunk".to_string()
+            }
+            ChunkError::NonMatchingDataLength(provided, actual) => {
+                format!(
+                    "Data length provided {} did not match, actual data length is {}",
+                    provided, actual
+                )
+            }
+        };
+
+        write!(f, "{}", msg)
+    }
+}
+
 impl Chunk {
     pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+        let length = data
+            .len()
+            .try_into()
+            .expect("Invalid data size for chunk creation");
+
+        let crc = Self::calculate_crc(&chunk_type, &data);
+        Chunk {
+            length,
+            chunk_type,
+            data,
+            crc,
+        }
+    }
+
+    fn calculate_crc(chunk_type: &ChunkType, data: &Vec<u8>) -> u32 {
         let crc = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
         let crc_data: Vec<u8> = chunk_type
@@ -22,14 +72,7 @@ impl Chunk {
             .copied()
             .collect();
 
-        let crc = crc.checksum(&crc_data);
-
-        Chunk {
-            length: data.len() as u32,
-            chunk_type,
-            data,
-            crc,
-        }
+        crc.checksum(&crc_data)
     }
 
     pub fn length(&self) -> u32 {
@@ -72,16 +115,40 @@ impl TryFrom<&[u8]> for Chunk {
 
     fn try_from(value: &[u8]) -> Result<Self> {
         if value.len() < 4 {
-            todo!("return corresponding error")
+            return Err(Box::new(ChunkError::NoDataLengthProvided));
         }
-        let (chunk_code, data) = value.split_at(4);
-        let chunk_code: [u8; 4] = chunk_code
-            .try_into()
-            .expect("Lenght already validated, should not panic");
+        let (length, value) = value.split_at(4);
+        let length = u32::from_be_bytes(length.try_into()?);
 
+        if value.len() < 4 {
+            return Err(Box::new(ChunkError::NoChunkTypeProvided));
+        }
+        let (chunk_code, value) = value.split_at(4);
+        let chunk_code: [u8; 4] = chunk_code.try_into()?;
         let chunk_type = ChunkType::try_from(chunk_code)?;
 
-        Ok(Self::new(chunk_type, data.to_vec()))
+        if value.len() != length as usize + 4 {
+            return Err(Box::new(ChunkError::NonMatchingDataLength(
+                length as usize,
+                value.len() - 4,
+            )));
+        }
+
+        let (data, crc) = value.split_at(length as usize);
+        let data = data.to_vec();
+        let crc = u32::from_be_bytes(crc.try_into()?);
+
+        let actual_crc = Self::calculate_crc(&chunk_type, &data);
+        if crc != actual_crc {
+            return Err(Box::new(ChunkError::InvalidCrc(crc, actual_crc)));
+        }
+
+        Ok(Chunk {
+            length,
+            chunk_type,
+            data,
+            crc,
+        })
     }
 }
 
