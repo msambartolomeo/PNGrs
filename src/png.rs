@@ -1,4 +1,4 @@
-use std::io::{BufReader, Read};
+use std::str::FromStr;
 
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
@@ -10,6 +10,56 @@ struct Png {
 
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+
+    pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
+        Png { chunks }
+    }
+
+    pub fn append_chunk(&mut self, chunk: Chunk) {
+        self.chunks.push(chunk);
+    }
+
+    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
+        let chunk_type = ChunkType::from_str(chunk_type)?;
+
+        for (i, chunk) in self.chunks.iter().enumerate() {
+            if chunk_type == *chunk.chunk_type() {
+                return Ok(self.chunks.remove(i));
+            }
+        }
+
+        todo!("Return error")
+    }
+
+    pub fn header(&self) -> &[u8; 8] {
+        &Self::STANDARD_HEADER
+    }
+
+    pub fn chunks(&self) -> &[Chunk] {
+        &self.chunks
+    }
+
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+        let chunk_type = ChunkType::from_str(chunk_type).ok()?;
+
+        for chunk in self.chunks.iter() {
+            if chunk_type == *chunk.chunk_type() {
+                return Some(&chunk);
+            }
+        }
+        None
+    }
+
+    pub fn as_bytes(&self) -> Vec<u8> {
+        let mut vec: Vec<u8> = Png::STANDARD_HEADER.iter().copied().collect();
+
+        for chunk in self.chunks.iter() {
+            // NOTE: extends is like append but moves the vector instead of moving the elements
+            vec.extend(chunk.as_bytes());
+        }
+
+        vec
+    }
 }
 
 impl TryFrom<&[u8]> for Png {
