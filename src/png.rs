@@ -74,14 +74,14 @@ impl TryFrom<&[u8]> for Png {
 
     fn try_from(value: &[u8]) -> Result<Self> {
         if value.len() < Png::STANDARD_HEADER.len() {
-            todo!("Return error no header provided");
+            return Err(Box::new(PngError::NoHeaderProvided));
         }
 
         let (header, mut chunks) = value.split_at(Png::STANDARD_HEADER.len());
-        let header: [u8; 8] = header.try_into()?;
+        let header: [u8; Png::STANDARD_HEADER.len()] = header.try_into()?;
 
         if header != Self::STANDARD_HEADER {
-            todo!("Return ivalid header error");
+            return Err(Box::new(PngError::InvalidHeader(header)));
         }
 
         let mut png = Png { chunks: Vec::new() };
@@ -90,7 +90,7 @@ impl TryFrom<&[u8]> for Png {
             let chunk = Chunk::try_from(chunks)?;
 
             // TODO: Replace magic number
-            (_, chunks) = chunks.split_at(chunk.length() as usize + 12);
+            (_, chunks) = chunks.split_at(chunk.length() as usize + Chunk::METEDATA_LENGTH);
 
             png.chunks.push(chunk);
         }
@@ -101,10 +101,34 @@ impl TryFrom<&[u8]> for Png {
 
 impl Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!("Implement if needed")
+        // TODO: implement if needed
+        write!(f, "{}", "png")
     }
 }
 
+#[derive(Debug)]
+enum PngError {
+    NoHeaderProvided,
+    InvalidHeader([u8; 8]),
+}
+
+impl std::error::Error for PngError {}
+
+impl Display for PngError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            PngError::NoHeaderProvided => {
+                "No Png header provided in creation of Png structure".to_string()
+            }
+            PngError::InvalidHeader(header) => format!(
+                "The file provided was not a png file, it has invalid header {:?}",
+                header
+            ),
+        };
+
+        write!(f, "{}", msg)
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

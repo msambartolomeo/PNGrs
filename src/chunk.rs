@@ -17,6 +17,7 @@ pub enum ChunkError {
     NoDataLengthProvided,
     NoChunkTypeProvided,
     NonMatchingDataLength(usize, usize),
+    NoCrcProvided,
 }
 
 impl std::error::Error for ChunkError {}
@@ -40,6 +41,7 @@ impl Display for ChunkError {
                     provided, actual
                 )
             }
+            ChunkError::NoCrcProvided => "No crc was provided when creating chunk".to_string(),
         };
 
         write!(f, "{}", msg)
@@ -47,6 +49,12 @@ impl Display for ChunkError {
 }
 
 impl Chunk {
+    pub const LENGTH_LENGTH: usize = 4;
+    pub const TYPE_LENGTH: usize = 4;
+    pub const CRC_LENGTH: usize = 4;
+    pub const METEDATA_LENGTH: usize =
+        Chunk::CRC_LENGTH + Chunk::LENGTH_LENGTH + Chunk::TYPE_LENGTH;
+
     pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         let length = data
             .len()
@@ -121,28 +129,34 @@ impl TryFrom<&[u8]> for Chunk {
         // reader.read_exact(&mut buffer)?;
         // let data_length = u32::from_be_bytes(buffer);
 
-        if value.len() < 4 {
+        if value.len() < Chunk::LENGTH_LENGTH {
             return Err(Box::new(ChunkError::NoDataLengthProvided));
         }
-        let (length, value) = value.split_at(4);
+        let (length, value) = value.split_at(Chunk::LENGTH_LENGTH);
         let length = u32::from_be_bytes(length.try_into()?);
 
-        if value.len() < 4 {
+        if value.len() < Chunk::TYPE_LENGTH {
             return Err(Box::new(ChunkError::NoChunkTypeProvided));
         }
-        let (chunk_code, value) = value.split_at(4);
-        let chunk_code: [u8; 4] = chunk_code.try_into()?;
+        let (chunk_code, value) = value.split_at(Chunk::TYPE_LENGTH);
+        let chunk_code: [u8; Chunk::TYPE_LENGTH] = chunk_code.try_into()?;
         let chunk_type = ChunkType::try_from(chunk_code)?;
 
-        if value.len() != length as usize + 4 {
+        if value.len() < length as usize {
             return Err(Box::new(ChunkError::NonMatchingDataLength(
                 length as usize,
-                value.len() - 4,
+                value.len(),
             )));
         }
 
-        let (data, crc) = value.split_at(length as usize);
+        let (data, value) = value.split_at(length as usize);
         let data = data.to_vec();
+
+        if value.len() < Chunk::CRC_LENGTH {
+            return Err(Box::new(ChunkError::NoCrcProvided));
+        }
+
+        let (crc, _) = value.split_at(Chunk::CRC_LENGTH);
         let crc = u32::from_be_bytes(crc.try_into()?);
 
         let actual_crc = Self::calculate_crc(&chunk_type, &data);
