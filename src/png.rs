@@ -3,6 +3,7 @@ use crate::chunk_type::ChunkType;
 use anyhow::{bail, Error, Result};
 use std::fmt::Display;
 use std::str::FromStr;
+use thiserror::Error as ThisError;
 
 pub struct Png {
     chunks: Vec<Chunk>,
@@ -100,30 +101,14 @@ impl Display for Png {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ThisError)]
 pub enum PngError {
+    #[error("Png parsing error, the file is not a valid PNG image")]
     NoHeaderProvided,
+    #[error("Png parsing error, the file is not a valid PNG image")]
     InvalidHeader([u8; 8]),
+    #[error("No message with code {0} found encoded in image")]
     NoChunkTypeFound(String),
-}
-
-impl std::error::Error for PngError {}
-
-impl Display for PngError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let msg = match self {
-            PngError::NoHeaderProvided => {
-                "No Png header provided in creation of Png structure".to_string()
-            }
-            PngError::InvalidHeader(header) => format!(
-                "The file provided was not a png file, it has invalid header {:?}",
-                header
-            ),
-            PngError::NoChunkTypeFound(s) => format!("No Message with code {} found", s),
-        };
-
-        write!(f, "{}", msg)
-    }
 }
 
 #[cfg(test)]

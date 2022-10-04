@@ -1,33 +1,18 @@
-use std::{fmt::Display, str::FromStr};
-
 use anyhow::{bail, Error, Result};
+use std::{fmt::Display, str::FromStr};
+use thiserror::Error as ThisError;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ChunkType {
     code: [u8; 4],
 }
 
-#[derive(Debug)]
+#[derive(Debug, ThisError)]
 pub enum ChunkTypeError {
+    #[error("Error creating chunk type, code is of length {0} but it must be of length 4")]
     InvalidLength(usize),
+    #[error("Error creating chunk type, value {0} is not a valid ascii letter")]
     InvalidByte(u8),
-}
-
-impl std::error::Error for ChunkTypeError {}
-
-impl Display for ChunkTypeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let msg = match self {
-            ChunkTypeError::InvalidLength(length) => {
-                format!("Invalid chunk code length {}, must be 4", length)
-            }
-            ChunkTypeError::InvalidByte(c) => {
-                format!("Invalid character {} on chunk code", *c as char)
-            }
-        };
-
-        write!(f, "{}", msg)
-    }
 }
 
 // NOTE: Functions are allowed unused for future extension
