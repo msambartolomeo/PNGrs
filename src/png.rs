@@ -98,7 +98,7 @@ impl TryFrom<&[u8]> for Png {
 impl Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for chunk in self.chunks.iter() {
-            write!(f, "{}", chunk.chunk_type())?;
+            write!(f, "[{}]\n", chunk.chunk_type())?;
         }
 
         Ok(())
@@ -106,7 +106,7 @@ impl Display for Png {
 }
 
 #[derive(Debug)]
-enum PngError {
+pub enum PngError {
     NoHeaderProvided,
     InvalidHeader([u8; 8]),
     NoChunkTypeFound(String),
