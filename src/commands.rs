@@ -1,7 +1,7 @@
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
-use crate::png::{Png, PngError};
-use crate::Result;
+use crate::png::Png;
+use anyhow::{bail, Result};
 use std::fs;
 use std::str::FromStr;
 
@@ -28,7 +28,7 @@ pub fn decode(path: String, code: String) -> Result<()> {
 
     let chunk = match png.chunk_by_type(&code) {
         Some(chunk) => chunk,
-        None => return Err(Box::new(PngError::NoChunkTypeFound(code))),
+        None => bail!("Could not find message encoded with code {}", code),
     };
 
     let message = chunk.data_as_string()?;

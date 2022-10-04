@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::chunk_type::ChunkType;
-use crate::{Error, Result};
+use anyhow::{bail, Error, Result};
 use crc::{Crc, CRC_32_ISO_HDLC};
 
 pub struct Chunk {
@@ -111,10 +111,7 @@ impl Chunk {
     }
 
     pub fn data_as_string(&self) -> Result<String> {
-        match std::str::from_utf8(&self.data) {
-            Ok(s) => Ok(String::from(s)),
-            Err(e) => Err(Box::new(e)),
-        }
+        Ok(std::str::from_utf8(&self.data)?.to_string())
     }
 }
 
@@ -130,30 +127,30 @@ impl TryFrom<&[u8]> for Chunk {
         // let data_length = u32::from_be_bytes(buffer);
 
         if value.len() < Chunk::LENGTH_LENGTH {
-            return Err(Box::new(ChunkError::NoDataLengthProvided));
+            bail!(ChunkError::NoDataLengthProvided);
         }
         let (length, value) = value.split_at(Chunk::LENGTH_LENGTH);
         let length = u32::from_be_bytes(length.try_into()?);
 
         if value.len() < Chunk::TYPE_LENGTH {
-            return Err(Box::new(ChunkError::NoChunkTypeProvided));
+            bail!(ChunkError::NoChunkTypeProvided);
         }
         let (chunk_code, value) = value.split_at(Chunk::TYPE_LENGTH);
         let chunk_code: [u8; Chunk::TYPE_LENGTH] = chunk_code.try_into()?;
         let chunk_type = ChunkType::try_from(chunk_code)?;
 
         if value.len() < length as usize {
-            return Err(Box::new(ChunkError::NonMatchingDataLength(
+            bail!(ChunkError::NonMatchingDataLength(
                 length as usize,
                 value.len(),
-            )));
+            ));
         }
 
         let (data, value) = value.split_at(length as usize);
         let data = data.to_vec();
 
         if value.len() < Chunk::CRC_LENGTH {
-            return Err(Box::new(ChunkError::NoCrcProvided));
+            bail!(ChunkError::NoCrcProvided);
         }
 
         let (crc, _) = value.split_at(Chunk::CRC_LENGTH);
@@ -161,7 +158,7 @@ impl TryFrom<&[u8]> for Chunk {
 
         let actual_crc = Self::calculate_crc(&chunk_type, &data);
         if crc != actual_crc {
-            return Err(Box::new(ChunkError::InvalidCrc(crc, actual_crc)));
+            bail!(ChunkError::InvalidCrc(crc, actual_crc));
         }
 
         Ok(Chunk {

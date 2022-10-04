@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{Error, Result};
+use anyhow::{bail, Error, Result};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ChunkType {
@@ -72,7 +72,7 @@ impl TryFrom<[u8; 4]> for ChunkType {
     fn try_from(value: [u8; 4]) -> Result<Self> {
         for c in value {
             if let 0..=64 | 91..=96 | 123..=255 = c {
-                return Err(Box::new(ChunkTypeError::InvalidByte(c)));
+                bail!(ChunkTypeError::InvalidByte(c));
             }
         }
 
@@ -86,7 +86,7 @@ impl FromStr for ChunkType {
     fn from_str(s: &str) -> Result<Self> {
         let code: [u8; 4] = match s.as_bytes().try_into() {
             Ok(code) => code,
-            Err(_) => return Err(Box::new(ChunkTypeError::InvalidLength(s.len()))),
+            Err(_) => bail!(ChunkTypeError::InvalidLength(s.len())),
         };
 
         Self::try_from(code)
