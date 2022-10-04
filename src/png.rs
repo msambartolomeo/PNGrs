@@ -12,7 +12,7 @@ pub struct Png {
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    pub fn from_chunks(chunks: Vec<Chunk>) -> Self {
+    fn _from_chunks(chunks: Vec<Chunk>) -> Self {
         Png { chunks }
     }
 
@@ -38,11 +38,7 @@ impl Png {
         Err(Box::new(PngError::NoChunkTypeFound(chunk_type.to_string())))
     }
 
-    pub fn header(&self) -> &[u8; 8] {
-        &Self::STANDARD_HEADER
-    }
-
-    pub fn chunks(&self) -> &[Chunk] {
+    fn _chunks(&self) -> &[Chunk] {
         &self.chunks
     }
 
@@ -98,7 +94,7 @@ impl TryFrom<&[u8]> for Png {
 impl Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for chunk in self.chunks.iter() {
-            write!(f, "[{}]\n", chunk.chunk_type())?;
+            writeln!(f, "[{}]", chunk.chunk_type())?;
         }
 
         Ok(())
@@ -148,7 +144,7 @@ mod tests {
 
     fn testing_png() -> Png {
         let chunks = testing_chunks();
-        Png::from_chunks(chunks)
+        Png::_from_chunks(chunks)
     }
 
     fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
@@ -161,9 +157,9 @@ mod tests {
     #[test]
     fn test_from_chunks() {
         let chunks = testing_chunks();
-        let png = Png::from_chunks(chunks);
+        let png = Png::_from_chunks(chunks);
 
-        assert_eq!(png.chunks().len(), 3);
+        assert_eq!(png._chunks().len(), 3);
     }
 
     #[test]
@@ -227,7 +223,7 @@ mod tests {
     #[test]
     fn test_list_chunks() {
         let png = testing_png();
-        let chunks = png.chunks();
+        let chunks = png._chunks();
         assert_eq!(chunks.len(), 3);
     }
 

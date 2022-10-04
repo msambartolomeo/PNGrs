@@ -30,6 +30,8 @@ impl Display for ChunkTypeError {
     }
 }
 
+// NOTE: Functions are allowed unused for future extension
+#[allow(unused)]
 impl ChunkType {
     pub fn bytes(&self) -> [u8; 4] {
         self.code
@@ -43,23 +45,23 @@ impl ChunkType {
         self.code[byte - 1] & (1 << 5) != 0
     }
 
-    pub fn is_critical(&self) -> bool {
+    fn is_critical(&self) -> bool {
         !self.is_property_bit_on(1)
     }
 
-    pub fn is_public(&self) -> bool {
+    fn is_public(&self) -> bool {
         !self.is_property_bit_on(2)
     }
 
-    pub fn is_reserved_bit_valid(&self) -> bool {
+    fn is_reserved_bit_valid(&self) -> bool {
         !self.is_property_bit_on(3)
     }
 
-    pub fn is_safe_to_copy(&self) -> bool {
+    fn is_safe_to_copy(&self) -> bool {
         self.is_property_bit_on(4)
     }
 
-    pub fn is_valid(&self) -> bool {
+    fn is_valid(&self) -> bool {
         self.is_reserved_bit_valid()
     }
 }
