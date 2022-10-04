@@ -1,9 +1,9 @@
-use std::fmt::Display;
-use std::str::FromStr;
-
 use crate::chunk::Chunk;
 use crate::chunk_type::ChunkType;
-use crate::{Error, Result};
+use anyhow::{bail, Error, Result};
+use std::fmt::Display;
+use std::str::FromStr;
+use thiserror::Error as ThisError;
 
 pub struct Png {
     chunks: Vec<Chunk>,
@@ -35,7 +35,7 @@ impl Png {
             }
         }
 
-        Err(Box::new(PngError::NoChunkTypeFound(chunk_type.to_string())))
+        bail!(PngError::NoChunkTypeFound(chunk_type.to_string()))
     }
 
     fn _chunks(&self) -> &[Chunk] {
@@ -67,14 +67,14 @@ impl TryFrom<&[u8]> for Png {
 
     fn try_from(value: &[u8]) -> Result<Self> {
         if value.len() < Png::STANDARD_HEADER.len() {
-            return Err(Box::new(PngError::NoHeaderProvided));
+            bail!(PngError::NoHeaderProvided);
         }
 
         let (header, mut chunks) = value.split_at(Png::STANDARD_HEADER.len());
         let header: [u8; Png::STANDARD_HEADER.len()] = header.try_into()?;
 
         if header != Self::STANDARD_HEADER {
-            return Err(Box::new(PngError::InvalidHeader(header)));
+            bail!(PngError::InvalidHeader(header));
         }
 
         let mut png = Png { chunks: Vec::new() };
@@ -101,30 +101,14 @@ impl Display for Png {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ThisError)]
 pub enum PngError {
+    #[error("Png parsing error, the file is not a valid PNG image")]
     NoHeaderProvided,
+    #[error("Png parsing error, the file is not a valid PNG image")]
     InvalidHeader([u8; 8]),
+    #[error("No message with code {0} found encoded in image")]
     NoChunkTypeFound(String),
-}
-
-impl std::error::Error for PngError {}
-
-impl Display for PngError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let msg = match self {
-            PngError::NoHeaderProvided => {
-                "No Png header provided in creation of Png structure".to_string()
-            }
-            PngError::InvalidHeader(header) => format!(
-                "The file provided was not a png file, it has invalid header {:?}",
-                header
-            ),
-            PngError::NoChunkTypeFound(s) => format!("No Message with code {} found", s),
-        };
-
-        write!(f, "{}", msg)
-    }
 }
 
 #[cfg(test)]

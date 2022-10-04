@@ -1,33 +1,18 @@
+use anyhow::{bail, Error, Result};
 use std::{fmt::Display, str::FromStr};
-
-use crate::{Error, Result};
+use thiserror::Error as ThisError;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ChunkType {
     code: [u8; 4],
 }
 
-#[derive(Debug)]
+#[derive(Debug, ThisError)]
 pub enum ChunkTypeError {
+    #[error("Error creating chunk type, code is of length {0} but it must be of length 4")]
     InvalidLength(usize),
+    #[error("Error creating chunk type, value {0} is not a valid ascii letter")]
     InvalidByte(u8),
-}
-
-impl std::error::Error for ChunkTypeError {}
-
-impl Display for ChunkTypeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let msg = match self {
-            ChunkTypeError::InvalidLength(length) => {
-                format!("Invalid chunk code length {}, must be 4", length)
-            }
-            ChunkTypeError::InvalidByte(c) => {
-                format!("Invalid character {} on chunk code", *c as char)
-            }
-        };
-
-        write!(f, "{}", msg)
-    }
 }
 
 // NOTE: Functions are allowed unused for future extension
@@ -72,7 +57,7 @@ impl TryFrom<[u8; 4]> for ChunkType {
     fn try_from(value: [u8; 4]) -> Result<Self> {
         for c in value {
             if let 0..=64 | 91..=96 | 123..=255 = c {
-                return Err(Box::new(ChunkTypeError::InvalidByte(c)));
+                bail!(ChunkTypeError::InvalidByte(c));
             }
         }
 
@@ -86,7 +71,7 @@ impl FromStr for ChunkType {
     fn from_str(s: &str) -> Result<Self> {
         let code: [u8; 4] = match s.as_bytes().try_into() {
             Ok(code) => code,
-            Err(_) => return Err(Box::new(ChunkTypeError::InvalidLength(s.len()))),
+            Err(_) => bail!(ChunkTypeError::InvalidLength(s.len())),
         };
 
         Self::try_from(code)
