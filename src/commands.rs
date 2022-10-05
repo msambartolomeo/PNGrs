@@ -1,7 +1,5 @@
-use crate::chunk::Chunk;
-use crate::chunk_type::ChunkType;
-use crate::png::Png;
 use anyhow::{bail, Result};
+use pngrs::{Chunk, ChunkType, Png};
 use std::fs;
 use std::str::FromStr;
 

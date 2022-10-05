@@ -3,10 +3,7 @@ use clap::Parser;
 use commands::{decode, encode, print, remove};
 
 mod args;
-mod chunk;
-mod chunk_type;
 mod commands;
-mod png;
 
 use anyhow::Result;
 

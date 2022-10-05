@@ -1,6 +1,7 @@
-use crate::chunk::Chunk;
-use crate::chunk_type::ChunkType;
+pub mod chunk;
+
 use anyhow::{bail, Error, Result};
+use chunk::{chunk_type::ChunkType, Chunk};
 use std::fmt::Display;
 use std::str::FromStr;
 use thiserror::Error as ThisError;

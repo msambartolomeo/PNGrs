@@ -1,5 +1,7 @@
-use crate::chunk_type::ChunkType;
+pub mod chunk_type;
+
 use anyhow::{bail, Error, Result};
+use chunk_type::ChunkType;
 use crc::{Crc, CRC_32_ISO_HDLC};
 use std::fmt::Display;
 use thiserror::Error as ThisError;
@@ -164,7 +166,6 @@ impl Display for Chunk {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chunk_type::ChunkType;
     use std::str::FromStr;
 
     fn testing_chunk() -> Chunk {
