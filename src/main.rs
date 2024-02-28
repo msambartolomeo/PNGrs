@@ -1,4 +1,4 @@
-use args::{Args, Commands::*};
+use args::{Args, Commands};
 use clap::Parser;
 use commands::{decode, encode, print, remove};
 
@@ -11,14 +11,14 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     match args.command {
-        Encode {
+        Commands::Encode {
             path,
             code,
             message,
             output,
-        } => encode(path, code, message, output),
-        Decode { path, code } => decode(path, code),
-        Remove { path, code } => remove(path, code),
-        Print { path } => print(path),
+        } => encode(path, &code, message, output),
+        Commands::Decode { path, code } => decode(&path, &code),
+        Commands::Remove { path, code } => remove(&path, &code),
+        Commands::Print { path } => print(&path),
     }
 }

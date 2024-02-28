@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -14,18 +16,18 @@ pub struct Args {
 pub enum Commands {
     #[command(about = "Encode a message into a PNG file")]
     Encode {
-        path: String,
+        path: PathBuf,
         code: String,
         message: String,
-        output: Option<String>,
+        output: Option<PathBuf>,
     },
 
     #[command(about = "Decode a message stored in a PNG file")]
-    Decode { path: String, code: String },
+    Decode { path: PathBuf, code: String },
 
     #[command(about = "Remove a message from a PNG file")]
-    Remove { path: String, code: String },
+    Remove { path: PathBuf, code: String },
 
     #[command(about = "Print a list of PNG chunks that can be searched for messages")]
-    Print { path: String },
+    Print { path: PathBuf },
 }

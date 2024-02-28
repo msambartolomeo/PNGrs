@@ -33,17 +33,17 @@ impl Chunk {
     pub const LENGTH_LENGTH: usize = 4;
     pub const TYPE_LENGTH: usize = 4;
     pub const CRC_LENGTH: usize = 4;
-    pub const METEDATA_LENGTH: usize =
-        Chunk::CRC_LENGTH + Chunk::LENGTH_LENGTH + Chunk::TYPE_LENGTH;
+    pub const METEDATA_LENGTH: usize = Self::CRC_LENGTH + Self::LENGTH_LENGTH + Self::TYPE_LENGTH;
 
-    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+    #[must_use]
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Self {
         let length = data
             .len()
             .try_into()
             .expect("Invalid data size for chunk creation");
 
         let crc = Self::calculate_crc(&chunk_type, &data);
-        Chunk {
+        Self {
             length,
             chunk_type,
             data,
@@ -64,22 +64,27 @@ impl Chunk {
         crc.checksum(&crc_data)
     }
 
-    pub fn length(&self) -> u32 {
+    #[must_use]
+    pub const fn length(&self) -> u32 {
         self.length
     }
 
-    pub fn chunk_type(&self) -> &ChunkType {
+    #[must_use]
+    pub const fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
 
+    #[must_use]
     pub fn data(&self) -> &[u8] {
         &self.data
     }
 
-    pub fn crc(&self) -> u32 {
+    #[must_use]
+    pub const fn crc(&self) -> u32 {
         self.crc
     }
 
+    #[must_use]
     pub fn as_bytes(&self) -> Vec<u8> {
         self.length
             .to_be_bytes()
@@ -107,17 +112,17 @@ impl TryFrom<&[u8]> for Chunk {
         // reader.read_exact(&mut buffer)?;
         // let data_length = u32::from_be_bytes(buffer);
 
-        if value.len() < Chunk::LENGTH_LENGTH {
+        if value.len() < Self::LENGTH_LENGTH {
             bail!(ChunkError::NoDataLengthProvided);
         }
-        let (length, value) = value.split_at(Chunk::LENGTH_LENGTH);
+        let (length, value) = value.split_at(Self::LENGTH_LENGTH);
         let length = u32::from_be_bytes(length.try_into()?);
 
-        if value.len() < Chunk::TYPE_LENGTH {
+        if value.len() < Self::TYPE_LENGTH {
             bail!(ChunkError::NoChunkTypeProvided);
         }
-        let (chunk_code, value) = value.split_at(Chunk::TYPE_LENGTH);
-        let chunk_code: [u8; Chunk::TYPE_LENGTH] = chunk_code.try_into()?;
+        let (chunk_code, value) = value.split_at(Self::TYPE_LENGTH);
+        let chunk_code: [u8; Self::TYPE_LENGTH] = chunk_code.try_into()?;
         let chunk_type = ChunkType::try_from(chunk_code)?;
 
         if value.len() < length as usize {
@@ -130,11 +135,11 @@ impl TryFrom<&[u8]> for Chunk {
         let (data, value) = value.split_at(length as usize);
         let data = data.to_vec();
 
-        if value.len() < Chunk::CRC_LENGTH {
+        if value.len() < Self::CRC_LENGTH {
             bail!(ChunkError::NoCrcProvided);
         }
 
-        let (crc, _) = value.split_at(Chunk::CRC_LENGTH);
+        let (crc, _) = value.split_at(Self::CRC_LENGTH);
         let crc = u32::from_be_bytes(crc.try_into()?);
 
         let actual_crc = Self::calculate_crc(&chunk_type, &data);
@@ -142,7 +147,7 @@ impl TryFrom<&[u8]> for Chunk {
             bail!(ChunkError::InvalidCrc(crc, actual_crc));
         }
 
-        Ok(Chunk {
+        Ok(Self {
             length,
             chunk_type,
             data,

@@ -5,6 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lints.clippy]
+pedantic = "deny"
+nursery = "deny"
+unwrap_used = "deny"
+module_name_repetitions = "allow"
+missing_panics_doc = "allow"
+missing_errors_doc = "allow"
+
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
 crc = "3.0.1"

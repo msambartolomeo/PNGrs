@@ -18,11 +18,12 @@ pub enum ChunkTypeError {
 // NOTE: Functions are allowed unused for future extension
 #[allow(unused)]
 impl ChunkType {
-    pub fn bytes(&self) -> [u8; 4] {
+    #[must_use]
+    pub const fn bytes(&self) -> [u8; 4] {
         self.code
     }
 
-    fn is_property_bit_on(&self, byte: usize) -> bool {
+    const fn is_property_bit_on(&self, byte: usize) -> bool {
         assert!(
             byte != 0 && byte <= 4,
             "Index out of bounds, should not happen as it is a private method"
@@ -30,23 +31,23 @@ impl ChunkType {
         self.code[byte - 1] & (1 << 5) != 0
     }
 
-    fn is_critical(&self) -> bool {
+    const fn is_critical(&self) -> bool {
         !self.is_property_bit_on(1)
     }
 
-    fn is_public(&self) -> bool {
+    const fn is_public(&self) -> bool {
         !self.is_property_bit_on(2)
     }
 
-    fn is_reserved_bit_valid(&self) -> bool {
+    const fn is_reserved_bit_valid(&self) -> bool {
         !self.is_property_bit_on(3)
     }
 
-    fn is_safe_to_copy(&self) -> bool {
+    const fn is_safe_to_copy(&self) -> bool {
         self.is_property_bit_on(4)
     }
 
-    fn is_valid(&self) -> bool {
+    const fn is_valid(&self) -> bool {
         self.is_reserved_bit_valid()
     }
 }
@@ -61,7 +62,7 @@ impl TryFrom<[u8; 4]> for ChunkType {
             }
         }
 
-        Ok(ChunkType { code: value })
+        Ok(Self { code: value })
     }
 }
 

@@ -3,6 +3,7 @@ pub mod chunk;
 use anyhow::{bail, Error, Result};
 use chunk::{chunk_type::ChunkType, Chunk};
 use std::fmt::Display;
+use std::path::Path;
 use std::str::FromStr;
 use thiserror::Error as ThisError;
 
@@ -14,10 +15,10 @@ impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
     fn _from_chunks(chunks: Vec<Chunk>) -> Self {
-        Png { chunks }
+        Self { chunks }
     }
 
-    pub fn from_file(path: &str) -> Result<Self> {
+    pub fn from_file(path: &Path) -> Result<Self> {
         let bytes: &[u8] = &std::fs::read(path)?;
 
         Self::try_from(bytes)
@@ -39,10 +40,12 @@ impl Png {
         bail!(PngError::NoChunkTypeFound(chunk_type.to_string()))
     }
 
+    #[must_use]
     fn _chunks(&self) -> &[Chunk] {
         &self.chunks
     }
 
+    #[must_use]
     pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         let chunk_type = ChunkType::from_str(chunk_type).ok()?;
 
@@ -51,10 +54,11 @@ impl Png {
             .find(|&chunk| *chunk.chunk_type() == chunk_type)
     }
 
+    #[must_use]
     pub fn as_bytes(&self) -> Vec<u8> {
-        let mut vec: Vec<u8> = Png::STANDARD_HEADER.to_vec();
+        let mut vec: Vec<u8> = Self::STANDARD_HEADER.to_vec();
 
-        for chunk in self.chunks.iter() {
+        for chunk in &self.chunks {
             // NOTE: extends is like append but moves the vector instead of moving the elements
             vec.extend(chunk.as_bytes());
         }
@@ -67,18 +71,18 @@ impl TryFrom<&[u8]> for Png {
     type Error = Error;
 
     fn try_from(value: &[u8]) -> Result<Self> {
-        if value.len() < Png::STANDARD_HEADER.len() {
+        if value.len() < Self::STANDARD_HEADER.len() {
             bail!(PngError::NoHeaderProvided);
         }
 
-        let (header, mut chunks) = value.split_at(Png::STANDARD_HEADER.len());
-        let header: [u8; Png::STANDARD_HEADER.len()] = header.try_into()?;
+        let (header, mut chunks) = value.split_at(Self::STANDARD_HEADER.len());
+        let header: [u8; Self::STANDARD_HEADER.len()] = header.try_into()?;
 
         if header != Self::STANDARD_HEADER {
             bail!(PngError::InvalidHeader(header));
         }
 
-        let mut png = Png { chunks: Vec::new() };
+        let mut png = Self { chunks: Vec::new() };
 
         while !chunks.is_empty() {
             let chunk = Chunk::try_from(chunks)?;
@@ -94,7 +98,7 @@ impl TryFrom<&[u8]> for Png {
 
 impl Display for Png {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for chunk in self.chunks.iter() {
+        for chunk in &self.chunks {
             writeln!(f, "[{}]", chunk.chunk_type())?;
         }
 

@@ -1,12 +1,15 @@
-use anyhow::{bail, Result};
-use pngrs::{Chunk, ChunkType, Png};
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-pub fn encode(path: String, code: String, message: String, output: Option<String>) -> Result<()> {
+use anyhow::{bail, Result};
+
+use pngrs::{Chunk, ChunkType, Png};
+
+pub fn encode(path: PathBuf, code: &str, message: String, output: Option<PathBuf>) -> Result<()> {
     let mut png = Png::from_file(&path)?;
 
-    let chunk_type = ChunkType::from_str(&code)?;
+    let chunk_type = ChunkType::from_str(code)?;
 
     let chunk = Chunk::new(chunk_type, message.into_bytes());
 
@@ -21,25 +24,24 @@ pub fn encode(path: String, code: String, message: String, output: Option<String
     Ok(())
 }
 
-pub fn decode(path: String, code: String) -> Result<()> {
-    let png = Png::from_file(&path)?;
+pub fn decode(path: &Path, code: &str) -> Result<()> {
+    let png = Png::from_file(path)?;
 
-    let chunk = match png.chunk_by_type(&code) {
-        Some(chunk) => chunk,
-        None => bail!("Could not find message encoded with code {}", code),
+    let Some(chunk) = png.chunk_by_type(code) else {
+        bail!("Could not find message encoded with code {code}")
     };
 
     let message = chunk.data_as_string()?;
 
-    println!("The encoded message with code {} is {}", code, message);
+    println!("The encoded message with code {code} is {message}");
 
     Ok(())
 }
 
-pub fn remove(path: String, code: String) -> Result<()> {
-    let mut png = Png::from_file(&path)?;
+pub fn remove(path: &Path, code: &str) -> Result<()> {
+    let mut png = Png::from_file(path)?;
 
-    let chunk = png.remove_chunk(&code)?;
+    let chunk = png.remove_chunk(code)?;
 
     let out_bytes = png.as_bytes();
 
@@ -47,20 +49,17 @@ pub fn remove(path: String, code: String) -> Result<()> {
 
     let message = chunk.data_as_string()?;
 
-    println!(
-        "Removed message encoded with code {}, it was {}",
-        code, message
-    );
+    println!("Removed message encoded with code {code}, it was {message}",);
 
     Ok(())
 }
 
-pub fn print(path: String) -> Result<()> {
-    let png = Png::from_file(&path)?;
+pub fn print(path: &Path) -> Result<()> {
+    let png = Png::from_file(path)?;
 
     println!("List of possible messages");
 
-    println!("{}", png);
+    println!("{png}");
 
     Ok(())
 }
