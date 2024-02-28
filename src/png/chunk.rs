@@ -175,9 +175,9 @@ mod tests {
 
     fn testing_chunk() -> Chunk {
         let data_length: u32 = 42;
-        let chunk_type = "RuSt".as_bytes();
+        let chunk_type = b"RuSt";
         let message_bytes = "This is where your secret message will be!".as_bytes();
-        let crc: u32 = 2882656334;
+        let crc: u32 = 2_882_656_334;
 
         let chunk_data: Vec<u8> = data_length
             .to_be_bytes()
@@ -188,7 +188,7 @@ mod tests {
             .copied()
             .collect();
 
-        Chunk::try_from(chunk_data.as_ref()).unwrap()
+        Chunk::try_from(chunk_data.as_ref()).expect("Default chunk is valid")
     }
 
     #[test]
