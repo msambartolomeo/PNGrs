@@ -14,7 +14,7 @@ pub struct Png {
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    fn _from_chunks(chunks: Vec<Chunk>) -> Self {
+    const fn _from_chunks(chunks: Vec<Chunk>) -> Self {
         Self { chunks }
     }
 
